@@ -1,0 +1,83 @@
+
+
+--- Candidate #1 ---
+<span _ngcontent-ng-c1934216650="" class="d-flex align-items-center menu-item-content w-100"><!----><span _ngcontent-ng-c1934216650="">Alertes internes</span><!----><!----></span>
+--- end outerHTML ---
+click() direct reussi
+Datepicker ouvert
+Selecteur mois/annee ouvert
+Annee 2025 selectionnee
+Mois SEP selectionne
+Jour 22 selectionne
+Datepicker ouvert
+Selecteur mois/annee ouvert
+Annee 2025 selectionnee
+Mois SEP selectionne
+Jour 28 selectionne
+Erreur : 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+
+Plage des alertes : 2025-09-22 , 2025-09-28
+Found 29 candidate(s) ï¿½ je vais tenter plusieurs methodes de clic...
+
+--- Candidate #1 ---
+<span _ngcontent-ng-c1934216650="" class="d-flex align-items-center menu-item-content w-100"><!----><span _ngcontent-ng-c1934216650="">Alertes internes</span><!----><!----></span>
+--- end outerHTML ---
+click() direct reussi
+Datepicker ouvert
+Selecteur mois/annee ouvert
+Annee 2025 selectionnee
+Mois SEP selectionne
+Jour 22 selectionne
+Datepicker ouvert
+Selecteur mois/annee ouvert
+Annee 2025 selectionnee
+Mois SEP selectionne
+Jour 28 selectionne
+Erreur : 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+
+Plage des alertes : 2025-09-22 , 2025-09-28
+Found 29 candidate(s) ï¿½ je vais tenter plusieurs methodes de clic...
+
+--- Candidate #1 ---
+<span _ngcontent-ng-c1934216650="" class="d-flex align-items-center menu-item-content w-100"><!----><span _ngcontent-ng-c1934216650="">Alertes internes</span><!----><!----></span>
+--- end outerHTML ---
+click() direct reussi
+Datepicker ouvert
+Selecteur mois/annee ouvert
+Annee 2025 selectionnee
+Mois SEP selectionne
+Jour 22 selectionne
+Datepicker ouvert
+Selecteur mois/annee ouvert
+Annee 2025 selectionnee
+Mois SEP selectionne
+Jour 28 selectionne
+Fichier sauvegardï¿½ : C:\Users\bcoulet\Documents\projets\RTM_alerte\rtm_waryme\alertes\alertes_2025-09-22_2025-09-28.csv
+Script terminï¿½ avec succï¿½s
+
+========================================= 
+[02/10/2025 14:53:29,86] Demarrage du script 
+========================================= 
+Activation environnement virtuel... 
+Execution de scrap.py... 
+Plage des alertes : 2025-09-22 , 2025-09-28
+Found 29 candidate(s) — je vais tenter plusieurs methodes de clic...
+
+--- Candidate #1 ---
+<span _ngcontent-ng-c1934216650="" class="d-flex align-items-center menu-item-content w-100"><!----><span _ngcontent-ng-c1934216650="">Alertes internes</span><!----><!----></span>
+--- end outerHTML ---
+click() direct reussi
+Datepicker ouvert
+Selecteur mois/annee ouvert
+Annee 2025 selectionnee
+Mois SEP selectionne
+Jour 22 selectionne
+Datepicker ouvert
+Selecteur mois/annee ouvert
+Annee 2025 selectionnee
+Mois SEP selectionne
+Jour 28 selectionne
+Fichier sauvegardé : C:\Users\bcoulet\Documents\projets\RTM_alerte\rtm_waryme\alertes\alertes_2025-09-22_2025-09-28.csv
+Script terminé avec succès
+[02/10/2025 14:53:49,59] Fin execution - Code sortie: 0 
+ 

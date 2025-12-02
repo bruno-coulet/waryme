@@ -1,0 +1,12 @@
+[project]
+name = "rtm-waryme"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.13.5",
+    "dotenv>=0.9.9",
+    "pandas>=2.3.3",
+    "selenium>=4.35.0",
+]

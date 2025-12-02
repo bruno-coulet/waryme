@@ -1,0 +1,12 @@
+.env
+__pycache__/
+alertes_a_renommer/
+alertes_renommees/
+alertes/
+log/
+
+debug.py
+
+lignes_filtrees.csv
+
+
