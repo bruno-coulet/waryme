@@ -1,13 +1,56 @@
 """
 ===============================================================================
- Script : waryme_alertes_scraper.py
- Auteur : Bruno Coulet - Dopex
- Date   : 2024-06-06 (Mise à jour pour Chrome/Angular : 2025-12-12)
+ Script : scrap.py
+ Auteur : Bruno Coulet - RTM - Dopex
+ Date   : 06/06/2025 (Mise à jour pour Chrome/Angular : 12/12/2025)
  Version: 2.5 - Optimisation et Correction du Format MM/DD/YYYY
 -------------------------------------------------------------------------------
  Objectif :
      Ce script automatise la récupération hebdomadaire des alertes internes 
      depuis la plateforme WaryMe pour la SEMAINE PRÉCÉDENTE.
+
+ Fonctionnement Détaillé :
+ 
+ 1. Initialisation : 
+    Charge les identifiants depuis le fichier `.env`. Le chemin du ChromeDriver 
+    n'est plus nécessaire grâce à Selenium Manager. Le script calcule ensuite 
+    précisément le lundi et le dimanche de la semaine précédente.
+
+ 2. Lancement du Navigateur :
+    Lance une instance de Chrome via Selenium Manager avec un profil configuré 
+    pour autoriser les téléchargements automatiques dans le dossier `alertes/`.
+
+ 3. Connexion (login) :
+    Navigue vers l'URL WaryMe et utilise la fonction `safe_find` pour localiser 
+    les champs d'identifiant et de mot de passe de manière robuste (gestion 
+    des sélecteurs multiples en cascade).
+
+ 4. Application des Filtres (apply_filters) :
+    a. Navigation : Accède au menu "Alertes internes" et clique sur "Filtrer".
+    b. Injection des dates (Robustesse Angular) : Pour contourner les validations 
+       strictes de la plateforme Angular, le script utilise une injection 
+       JavaScript (`inject_date_js`) qui :
+       * Supprime l'attribut `disabled` des champs.
+       * Définit directement la valeur au format **MM/DD/YYYY** (Mois/Jour/Année), 
+         le format que l'application WaryMe exige, malgré l'interface française.
+       * Déclenche manuellement les événements DOM (`input`, `change`, `blur`) 
+         nécessaires pour forcer la mise à jour du modèle Angular.
+    c. Application : Clique sur le bouton "Appliquer les filtres" et attend 
+       que la grille de résultats se rafraîchisse.
+
+ 5. Export et Sauvegarde (export_csv) :
+    a. Export : Clique sur le bouton "Exporter", également via une injection 
+       JavaScript forcée pour garantir le déclenchement du téléchargement.
+    b. Attente et Renommage : Attend l'apparition du fichier CSV dans le répertoire 
+       `alertes/` (tout en ignorant les fichiers temporaires `.crdownload`). Le 
+       fichier est ensuite renommé au format `alertes_YYYY-MM-JJ_YYYY-MM-JJ.csv` 
+       de manière sécurisée, ajoutant un suffixe numérique (`_1`, `_2`, etc.) 
+       en cas de doublon.
+
+ 6. Gestion des Erreurs :
+    En cas de `TimeoutException` (élément non trouvé, chargement trop long) ou 
+    d'autres exceptions, le script envoie automatiquement un email d'alerte 
+    aux destinataires définis et ferme le navigateur (`driver.quit()`).
 ===============================================================================
 """
 
