@@ -1,21 +1,34 @@
+"""
+===============================================================================
+ Script : waryme_alertes_scraper.py
+ Auteur : Bruno Coulet - Dopex
+ Date   : 2024-06-06 (Mise à jour pour Chrome/Angular : 2025-12-12)
+ Version: 2.5 - Optimisation et Correction du Format MM/DD/YYYY
+-------------------------------------------------------------------------------
+ Objectif :
+     Ce script automatise la récupération hebdomadaire des alertes internes 
+     depuis la plateforme WaryMe pour la SEMAINE PRÉCÉDENTE.
+===============================================================================
+"""
+
 import os
 import time
 import logging
 import smtplib
 from email.mime.text import MIMEText
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 
 from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
-from utils import select_date, click_menu_item, safe_find
+# Assurez-vous que ces fonctions sont définies dans utils.py
+from utils import click_menu_item, safe_find 
 
 # ========== Logging ==========
 logging.basicConfig(
@@ -41,25 +54,16 @@ def send_error_mail(subject, body):
         logger.error(f"Échec envoi mail d'erreur : {e}")
 
 
-# ========== Charger variables .env pour se connecter à WaryMe ==========
+# ========== Charger variables .env ==========
 load_dotenv()
 ID = os.getenv("ID")
 PASSWORD = os.getenv("PASSWORD")
 URL = os.getenv("URL")
-CHROMEDRIVER_PATH = os.getenv("CHROMEDRIVER_PATH")
 
 # ========== Répertoire de téléchargement des alertes ==========
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DOWNLOAD_DIR = os.path.join(BASE_DIR, "alertes")
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-
-# ========== Dates ==========
-today = date.today()
-start_date = today - timedelta(days=today.weekday() + 7)  # lundi dernier
-end_date = start_date + timedelta(days=6)                 # dimanche dernier
-start_dt = datetime.combine(start_date, datetime.min.time())
-end_dt = datetime.combine(end_date, datetime.min.time())
-print(f"🗓️ Plage des alertes : {start_date} → {end_date}")
 
 # ========== Chrome Options ==========
 chrome_options = Options()
@@ -67,25 +71,49 @@ prefs = {
     "download.default_directory": DOWNLOAD_DIR,
     "download.prompt_for_download": False,
     "download.directory_upgrade": True,
-    "safebrowsing.enabled": True
+    "safebrowsing.enabled": True,
 }
 chrome_options.add_experimental_option("prefs", prefs)
-chrome_options.add_argument("--start-maximized")
 
-# ========== Fonctions principales ==========
+# ================================================================
+# FONCTION DE SUPPORT (Extraction de la fonction locale)
+# ================================================================
+
+def inject_date_js(driver, element, date_string):
+    """
+    Définit la date par JS, enlève disabled, et simule les événements clés
+    pour forcer la validation Angular.
+    """
+    # 1. Enlever disabled
+    driver.execute_script("arguments[0].removeAttribute('disabled');", element)
+    time.sleep(0.1)
+    
+    # 2. Définir la valeur directement via la propriété value
+    driver.execute_script("arguments[0].value = arguments[1];", element, date_string)
+    time.sleep(0.1)
+    
+    # 3. Simuler les événements nécessaires (Input, Change, Blur)
+    driver.execute_script("""
+        arguments[0].dispatchEvent(new Event('input',  { bubbles: true }));
+        arguments[0].dispatchEvent(new Event('change', { bubbles: true }));
+        arguments[0].dispatchEvent(new Event('blur',   { bubbles: true })); 
+    """, element)
+    time.sleep(0.2)
+
+# ================================================================
+# FONCTIONS PRINCIPALES
+# ================================================================
+
 def login(driver):
     logger.info("Ouverture page de connexion")
     driver.get(URL)
     WebDriverWait(driver, 15).until(lambda d: d.execute_script('return document.readyState') == 'complete')
 
-    # Identifiant
-    # username_element = WebDriverWait(driver, 15).until(
-    #     EC.element_to_be_clickable((By.CSS_SELECTOR, "input[formcontrolname='login']"))
-    # )
+    # Identifiant 
     username_element = safe_find(driver, [
-    ("css", "input[formcontrolname='login']"),         # sélecteur actuel
-    ("css", "input[placeholder='Email']"),             # fallback si dispo
-    ("xpath", "//input[@type='text' or @type='email']") # fallback générique
+        ("css", "input[formcontrolname='login']"), 
+        ("css", "input[placeholder='Email']"), 
+        ("xpath", "//input[@type='text' or @type='email']") 
     ])
     username_element.send_keys(ID)
     logger.info("Identifiant saisi")
@@ -98,13 +126,10 @@ def login(driver):
     logger.info("Bouton 'Se connecter' cliqué")
 
     # Mot de passe
-    # password_element = WebDriverWait(driver, 30).until(
-    #     EC.element_to_be_clickable((By.CSS_SELECTOR, "input[type='password']"))
-    # )
     password_element = safe_find(driver, [
-    ("css", "input[type='password']"),                 # sélecteur actuel
-    ("css", "input[aria-label='Mot de passe']"),       # fallback
-    ("xpath", "//input[@type='password']")             # fallback générique
+        ("css", "input[type='password']"), 
+        ("css", "input[aria-label='Mot de passe']"), 
+        ("xpath", "//input[@type='password']") 
     ])
 
     password_element.send_keys(PASSWORD + Keys.RETURN)
@@ -114,42 +139,80 @@ def login(driver):
     logger.info("Connexion réussie")
 
 
-def apply_filters(driver):
-    # Menu Alertes internes
+def apply_filters(driver, start_date: date, end_date: date):
+    logger.info("Accès au menu 'Alertes internes'")
     click_menu_item(driver, "Alertes internes", screenshot_path="debug_alertes.png")
+    time.sleep(2)
 
     # Bouton Filtrer
     filtrer_btn = WebDriverWait(driver, 15).until(
         EC.element_to_be_clickable((By.XPATH, "//button[.//span[text()='Filtrer']]"))
     )
     driver.execute_script("arguments[0].click();", filtrer_btn)
-    logger.info("Bouton 'Filtrer' cliqué")
+    logger.info("Bouton 'Filtrer' cliqué, panneau de filtre ouvert")
+    time.sleep(1) 
 
-    # Sélection dates
-    # select_date(driver, start_dt, toggle_selector="mat-datepicker-toggle[data-mat-calendar='mat-datepicker-0'] button")
-    # select_date(driver, end_dt, toggle_selector="mat-datepicker-toggle[data-mat-calendar='mat-datepicker-1'] button")
-    toggles = driver.find_elements(By.CSS_SELECTOR, "mat-datepicker-toggle button")
-    select_date(driver, start_dt, toggle_selector=toggles[0])
-    select_date(driver, end_dt, toggle_selector=toggles[1])
+    # ------------------------------------
+    # Injection des dates : Utilisation de la fonction externalisée
+    # ------------------------------------
+    
+    # Format MM/DD/YYYY (Mois/Jour/Année - format requis par l'UI)
+    start_txt = start_date.strftime("%m/%d/%Y")
+    end_txt   = end_date.strftime("%m/%d/%Y")
 
+    logger.info(f"Injection des dates (format MM/DD/YYYY par JS): {start_txt} -> {end_txt}")
+    
+    begin_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "beginDate")))
+    end_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "endDate")))
 
+    # Appel des fonctions d'injection
+    inject_date_js(driver, begin_input, start_txt)
+    inject_date_js(driver, end_input, end_txt)
+    time.sleep(1) 
 
+    # ------------------------------------
     # Appliquer filtres
+    # ------------------------------------
     apply_btn = WebDriverWait(driver, 15).until(
         EC.element_to_be_clickable((By.XPATH, "//span[normalize-space(text())='Appliquer les filtres']/ancestor::button"))
     )
+    
     driver.execute_script("arguments[0].click();", apply_btn)
     logger.info("Bouton 'Appliquer les filtres' cliqué")
+    
+    # Attente conditionnelle pour le rafraîchissement de la grille
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//tr[@role='row' or contains(@class, 'mat-row')]"))
+        )
+        logger.info("La grille d'alertes s'est rafraîchie.")
+    except TimeoutException:
+        logger.warning("La grille d'alertes ne s'est pas rafraîchie ou est vide.")
+
+    time.sleep(3)
 
 
-def export_csv(driver):
+def export_csv(driver, start_date: date, end_date: date):
     before = set(os.listdir(DOWNLOAD_DIR))
 
-    export_btn = WebDriverWait(driver, 15).until(
-        EC.element_to_be_clickable((By.XPATH, "//span[normalize-space(text())='Exporter']/ancestor::button"))
+    # Trouver et cliquer sur le bouton Export
+    export_btn = WebDriverWait(driver, 20).until(
+        EC.presence_of_element_located((
+            By.XPATH,
+            "//button[.//span[normalize-space(text())='Exporter']]"
+        ))
     )
-    driver.execute_script("arguments[0].click();", export_btn)
-    logger.info("Bouton 'Exporter' cliqué")
+    
+    # Forcer le clic via JS 
+    driver.execute_script("""
+        const btn = arguments[0];
+        btn.removeAttribute('disabled');
+        btn.click();
+    """, export_btn)
+    logger.info("Bouton 'Exporter' cliqué via JS forcé")
+    print("🔎 Vérification JS : export_btn.disabled =", driver.execute_script("return arguments[0].disabled;", export_btn))
+
+    print("📥 En attente de téléchargement dans :", DOWNLOAD_DIR)
 
     # Attente du fichier téléchargé
     file_path = None
@@ -165,17 +228,19 @@ def export_csv(driver):
         time.sleep(1)
 
     if not file_path:
+        page_content = driver.page_source
+        if "Aucune alerte trouvée" in page_content or "No alerts found" in page_content:
+             logger.warning("Aucun fichier CSV téléchargé, probablement car la grille est vide.")
         raise Exception("Aucun fichier CSV téléchargé")
 
     # Nouveau nom basé sur les dates
-    new_name = f"alertes_{start_date.strftime('%Y-%m-%d')}_{end_date.strftime('%Y-%m-%d')}.csv"
-    new_path = os.path.join(DOWNLOAD_DIR, new_name)
+    base_name = f"alertes_{start_date.strftime('%Y-%m-%d')}_{end_date.strftime('%Y-%m-%d')}"
+    new_path = os.path.join(DOWNLOAD_DIR, f"{base_name}.csv")
 
-    # Si le fichier existe déjà → ajouter suffixe
+    # Si le fichier existe déjà → ajouter suffixe (Logique simplifiée)
     counter = 1
-    base_new_path = new_path
     while os.path.exists(new_path):
-        new_path = base_new_path.replace(".csv", f"_{counter}.csv")
+        new_path = os.path.join(DOWNLOAD_DIR, f"{base_name}_{counter}.csv")
         counter += 1
 
     # Un seul renommage
@@ -184,16 +249,24 @@ def export_csv(driver):
     print(f"✅ Fichier sauvegardé : {new_path}")
 
 
-
-# ========== Main ==========
+# ========== Main Execution ==========
 if __name__ == "__main__":
-    service = Service(CHROMEDRIVER_PATH)
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
+    # Correction de la logique de date pour obtenir la SEMAINE PRÉCÉDENTE
+    today = date.today()
+    start_date = today - timedelta(days=today.weekday()) - timedelta(days=7) 
+    end_date = start_date + timedelta(days=6) 
+    print(f"🗓️ Plage des alertes : {start_date} → {end_date}")
+
+    driver = webdriver.Chrome(options=chrome_options)
 
     try:
+        print("✅ Debug : driver.title =", driver.title)
         login(driver)
-        apply_filters(driver)
-        export_csv(driver)
+        
+        apply_filters(driver, start_date, end_date)
+        export_csv(driver, start_date, end_date)
+        
         print("✅ Script terminé avec succès")
 
     except (TimeoutException, NoSuchElementException, Exception) as e:
