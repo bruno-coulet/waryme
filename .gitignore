@@ -5,6 +5,7 @@ __pycache__/
 alertes*/
 
 log/
+scraper.log
 
 debug.py
 
