@@ -1,8 +1,9 @@
 .env
 __pycache__/
-alertes_a_renommer/
-alertes_renommees/
-alertes/
+
+# Ignorer tous les dossiers dont le nom commence par "alertes"
+alertes*/
+
 log/
 
 debug.py
