@@ -299,7 +299,7 @@ if __name__ == "__main__":
     today = date.today()
     start_date = today - timedelta(days=today.weekday()) - timedelta(days=7) 
     end_date = start_date + timedelta(days=6) 
-    print(f"🗓️ Plage des alertes : {start_date} → {end_date}")
+    print(f"🗓️ Plage des alertes : {start_date.strftime('%d-%m-%Y')} → {end_date.strftime('%d-%m-%Y')}")
 
     driver = webdriver.Chrome(options=chrome_options)
 
