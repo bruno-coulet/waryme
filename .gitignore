@@ -14,9 +14,9 @@ alertes*
 log/
 *.log
 
-#  tests
-rename_tests/
-scrap_tests/
+# #  tests
+# rename_tests/
+# scrap_tests/
 
 # Sauvegardes
 sauvegarde_alertes/
