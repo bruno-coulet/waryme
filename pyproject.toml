@@ -8,5 +8,6 @@ dependencies = [
     "beautifulsoup4>=4.13.5",
     "dotenv>=0.9.9",
     "pandas>=2.3.3",
+    "playwright>=1.57.0",
     "selenium>=4.35.0",
 ]
